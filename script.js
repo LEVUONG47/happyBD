@@ -53,87 +53,59 @@ const CONFIG = {
 // BACKGROUND MUSIC
 // ============================================
 let bgMusic = null;
-let musicPlaying = false;
-let musicInitialized = false;
 
 function initMusic() {
   bgMusic = new Audio(CONFIG.musicFile);
   bgMusic.loop = true;
   bgMusic.volume = 0.5;
   bgMusic.preload = "auto";
-  
-  // Preload audio
   bgMusic.load();
-  
-  // Listen for canplaythrough to know when ready
-  bgMusic.addEventListener("canplaythrough", () => {
-    musicInitialized = true;
-    console.log("Music loaded and ready");
-  });
-  
-  // Handle errors
-  bgMusic.addEventListener("error", (e) => {
-    console.error("Music load error:", e);
-    showMusicButton();
-  });
+}
+
+function isMusicPlaying() {
+  return bgMusic && !bgMusic.paused;
 }
 
 function playMusic() {
-  if (!bgMusic) {
-    initMusic();
-  }
+  if (!bgMusic) initMusic();
   
-  if (musicPlaying) return;
-  
-  // Luôn hiện nút nhạc để người dùng có thể điều khiển
+  // Luôn hiện nút nhạc
   showMusicButton();
   
-  const playPromise = bgMusic.play();
-  
-  if (playPromise !== undefined) {
-    playPromise.then(() => {
-      musicPlaying = true;
+  bgMusic.play()
+    .then(() => {
+      console.log("Music started");
       updateMusicButton();
-      console.log("Music playing");
-    }).catch(e => {
-      console.log("Music autoplay blocked:", e);
-      musicPlaying = false;
+    })
+    .catch(e => {
+      console.log("Autoplay blocked:", e);
       updateMusicButton();
     });
-  }
 }
 
 function toggleMusic() {
-  if (!bgMusic) {
-    initMusic();
-    setTimeout(toggleMusic, 100);
-    return;
+  if (!bgMusic) initMusic();
+  
+  if (isMusicPlaying()) {
+    bgMusic.pause();
+  } else {
+    bgMusic.play().catch(e => console.log("Play error:", e));
   }
   
-  if (musicPlaying) {
-    bgMusic.pause();
-    musicPlaying = false;
-  } else {
-    bgMusic.play().then(() => {
-      musicPlaying = true;
-    }).catch(e => {
-      console.log("Play failed:", e);
-    });
-  }
-  updateMusicButton();
+  // Cập nhật nút sau một chút để đảm bảo trạng thái đúng
+  setTimeout(updateMusicButton, 100);
 }
 
 function showMusicButton() {
   const btn = document.getElementById("musicBtn");
-  if (btn) {
-    btn.classList.add("show");
-  }
+  if (btn) btn.classList.add("show");
 }
 
 function updateMusicButton() {
   const btn = document.getElementById("musicBtn");
   if (btn) {
-    btn.textContent = musicPlaying ? "🔊 Tắt nhạc" : "🔇 Bật nhạc";
+    const playing = isMusicPlaying();
+    btn.textContent = playing ? "🔊 Tắt nhạc" : "🔇 Bật nhạc";
     btn.classList.add("show");
   }
 }
