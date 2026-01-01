@@ -42,7 +42,7 @@ const CONFIG = {
   photoMultiplier: 5,
   
   // File nhạc nền (đặt file mp3 cùng thư mục)
-  musicFile: "music.mp3",
+  musicFile: "drums-274805.mp3",
   
   // Màu thiên hà (RGB 0-255)
   galaxyColor1: { r: 255, g: 154, b: 158 },  // Hồng
@@ -586,3 +586,4 @@ console.log("Birthday Galaxy loaded!");
 console.log("Tip: Thay doi CONFIG o dau file script.js de tuy chinh");
 console.log("Keo chuot de xoay, cuon de zoom");
 console.log("Nhac se phat khi nhap dung mat khau");
+
