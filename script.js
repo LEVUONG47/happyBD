@@ -39,7 +39,7 @@ const CONFIG = {
   avatarPhotoIndex: 3,
   
   // Số lần nhân bản mỗi ảnh trong thiên hà (nhiều hơn = nhiều ảnh hơn)
-  photoMultiplier: 5,
+  photoMultiplier: 8,
   
   // Màu thiên hà (RGB 0-255)
   galaxyColor1: { r: 255, g: 154, b: 158 },  // Hồng
@@ -348,24 +348,31 @@ function initGalaxy() {
 }
 
 // ============================================
-// 3D ORBITING PHOTOS
+// 3D ORBITING PHOTOS - LỘN XỘN, ĐAN XEN
 // ============================================
 function create3DPhotos() {
   const textureLoader = new THREE.TextureLoader();
   const galaxyPhotos = getGalaxyPhotos();
   
-  // Tạo nhiều bản sao của mỗi ảnh để có nhiều ảnh quay quanh hơn
+  // Tạo nhiều bản sao của mỗi ảnh - LỘN XỘN
   const multipliedPhotos = [];
-  galaxyPhotos.forEach(photo => {
-    // Mỗi ảnh xuất hiện nhiều lần ở các vị trí khác nhau
-    for (let i = 0; i < CONFIG.photoMultiplier; i++) {
+  for (let i = 0; i < CONFIG.photoMultiplier; i++) {
+    galaxyPhotos.forEach(photo => {
       multipliedPhotos.push(photo);
-    }
-  });
+    });
+  }
   
-  multipliedPhotos.forEach((photoUrl, index) => {
+  // Shuffle để lộn xộn hơn
+  for (let i = multipliedPhotos.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [multipliedPhotos[i], multipliedPhotos[j]] = [multipliedPhotos[j], multipliedPhotos[i]];
+  }
+  
+  multipliedPhotos.forEach((photoUrl) => {
     textureLoader.load(photoUrl, (texture) => {
-      const geometry = new THREE.PlaneGeometry(3, 3);
+      // Random size cho mỗi ảnh
+      const size = 2 + Math.random() * 2;
+      const geometry = new THREE.PlaneGeometry(size, size);
       const material = new THREE.MeshBasicMaterial({
         map: texture,
         side: THREE.DoubleSide,
@@ -374,16 +381,26 @@ function create3DPhotos() {
       
       const photo = new THREE.Mesh(geometry, material);
       
-      // Random orbit parameters - phân bố đều hơn
+      // HOÀN TOÀN RANDOM - không theo pattern
       const orbitData = {
         mesh: photo,
         photoUrl: photoUrl,
-        radius: 10 + Math.random() * 15,
-        speed: 0.15 + Math.random() * 0.25,
-        offset: (index / multipliedPhotos.length) * Math.PI * 2 + Math.random() * 0.5,
-        yOffset: (Math.random() - 0.5) * 8,
-        tilt: Math.random() * 1.5,
-        verticalSpeed: 0.1 + Math.random() * 0.2
+        // Bán kính random từ 8 đến 30
+        radius: 8 + Math.random() * 22,
+        // Tốc độ random - có thể âm (quay ngược)
+        speed: (Math.random() - 0.5) * 0.6,
+        // Góc bắt đầu hoàn toàn random
+        offset: Math.random() * Math.PI * 2,
+        // Độ cao random từ -10 đến 10
+        yOffset: (Math.random() - 0.5) * 20,
+        // Dao động dọc
+        tilt: Math.random() * 3,
+        verticalSpeed: (Math.random() - 0.5) * 0.4,
+        // Thêm chuyển động phức tạp
+        wobble: Math.random() * 2,
+        wobbleSpeed: 0.5 + Math.random() * 1,
+        // Độ nghiêng quỹ đạo
+        orbitTilt: (Math.random() - 0.5) * Math.PI * 0.5
       };
       
       orbitingPhotos.push(orbitData);
@@ -408,7 +425,7 @@ function scheduleRandomPhotoToCenter() {
       photoData.isMovingToCenter = true;
       photoData.centerTime = 0;
     }
-  }, 6000); // Mỗi 6 giây chọn ngẫu nhiên 1 ảnh
+  }, 5000); // Mỗi 5 giây chọn ngẫu nhiên 1 ảnh
 }
 
 function updateOrbitingPhotos(time) {
@@ -422,36 +439,28 @@ function updateOrbitingPhotos(time) {
       if (data.centerTime < 1) {
         // Moving to center
         const t = data.centerTime;
-        const easeT = t * t * (3 - 2 * t); // Smooth step
+        const easeT = t * t * (3 - 2 * t);
         
         const angle = time * data.speed + data.offset;
         const orbitX = Math.cos(angle) * data.radius;
         const orbitZ = Math.sin(angle) * data.radius;
         const orbitY = data.yOffset + Math.sin(time * data.verticalSpeed + data.offset) * data.tilt;
         
-        // Lerp to center
         data.mesh.position.x = orbitX * (1 - easeT);
         data.mesh.position.y = orbitY * (1 - easeT);
         data.mesh.position.z = orbitZ * (1 - easeT) + 12 * easeT;
         
-        // Scale up
         const scale = 1 + easeT * 2.5;
         data.mesh.scale.set(scale, scale, scale);
-        
-        // Face camera
         data.mesh.lookAt(camera.position);
         
       } else if (data.centerTime < 3) {
-        // Stay at center - 2 giây
         data.mesh.position.set(0, 0, 12);
         data.mesh.scale.set(3.5, 3.5, 3.5);
         data.mesh.lookAt(camera.position);
-        
-        // Show in HTML overlay
         showCenterPhoto(data.photoUrl);
         
       } else if (data.centerTime < 4) {
-        // Move back to orbit
         const t = (data.centerTime - 3);
         const easeT = t * t * (3 - 2 * t);
         
@@ -467,21 +476,33 @@ function updateOrbitingPhotos(time) {
         const scale = 3.5 - easeT * 2.5;
         data.mesh.scale.set(scale, scale, scale);
         data.mesh.lookAt(camera.position);
-        
         hideCenterPhoto();
         
       } else {
-        // Reset
         data.isMovingToCenter = false;
         data.centerTime = 0;
       }
       
     } else {
-      // Normal orbit
+      // CHUYỂN ĐỘNG LỘN XỘN
       const angle = time * data.speed + data.offset;
-      data.mesh.position.x = Math.cos(angle) * data.radius;
-      data.mesh.position.z = Math.sin(angle) * data.radius;
-      data.mesh.position.y = data.yOffset + Math.sin(time * data.verticalSpeed + data.offset) * data.tilt;
+      
+      // Thêm wobble để chuyển động không đều
+      const wobbleX = Math.sin(time * data.wobbleSpeed) * data.wobble;
+      const wobbleY = Math.cos(time * data.wobbleSpeed * 1.3) * data.wobble;
+      const wobbleZ = Math.sin(time * data.wobbleSpeed * 0.7) * data.wobble;
+      
+      // Quỹ đạo nghiêng
+      const baseX = Math.cos(angle) * data.radius;
+      const baseZ = Math.sin(angle) * data.radius;
+      
+      // Áp dụng độ nghiêng quỹ đạo
+      data.mesh.position.x = baseX + wobbleX;
+      data.mesh.position.z = baseZ * Math.cos(data.orbitTilt) + wobbleZ;
+      data.mesh.position.y = data.yOffset + 
+        Math.sin(time * data.verticalSpeed + data.offset) * data.tilt + 
+        baseZ * Math.sin(data.orbitTilt) + 
+        wobbleY;
       
       data.mesh.scale.set(1, 1, 1);
       data.mesh.lookAt(camera.position);
