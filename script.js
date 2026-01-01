@@ -41,40 +41,39 @@ const CONFIG = {
   // Số lần nhân bản mỗi ảnh trong thiên hà (nhiều hơn = nhiều ảnh hơn)
   photoMultiplier: 5,
   
-  // File nhạc nền (đặt file mp3 cùng thư mục)
-  musicFile: "../drums-274805.mp3",
-  
   // Màu thiên hà (RGB 0-255)
   galaxyColor1: { r: 255, g: 154, b: 158 },  // Hồng
   galaxyColor2: { r: 161, g: 140, b: 209 }   // Tím
 };
 
 // ============================================
-// BACKGROUND MUSIC
+// BACKGROUND MUSIC  
 // ============================================
 let bgMusic = null;
 
 function initMusic() {
-  bgMusic = new Audio(CONFIG.musicFile);
+  bgMusic = new Audio("drums-274805.mp3");
   bgMusic.loop = true;
   bgMusic.volume = 0.5;
   bgMusic.preload = "auto";
-  bgMusic.load();
-}
-
-function isMusicPlaying() {
-  return bgMusic && !bgMusic.paused;
+  
+  bgMusic.addEventListener("canplaythrough", () => {
+    console.log("Music loaded successfully");
+  });
+  
+  bgMusic.addEventListener("error", (e) => {
+    console.error("Music load error:", e);
+  });
 }
 
 function playMusic() {
   if (!bgMusic) initMusic();
   
-  // Luôn hiện nút nhạc
   showMusicButton();
   
   bgMusic.play()
     .then(() => {
-      console.log("Music started");
+      console.log("Music playing!");
       updateMusicButton();
     })
     .catch(e => {
@@ -84,16 +83,26 @@ function playMusic() {
 }
 
 function toggleMusic() {
-  if (!bgMusic) initMusic();
-  
-  if (isMusicPlaying()) {
-    bgMusic.pause();
-  } else {
-    bgMusic.play().catch(e => console.log("Play error:", e));
+  if (!bgMusic) {
+    initMusic();
+    setTimeout(toggleMusic, 100);
+    return;
   }
   
-  // Cập nhật nút sau một chút để đảm bảo trạng thái đúng
-  setTimeout(updateMusicButton, 100);
+  if (bgMusic.paused) {
+    bgMusic.play()
+      .then(() => {
+        console.log("Music resumed");
+        updateMusicButton();
+      })
+      .catch(e => {
+        console.log("Play error:", e);
+      });
+  } else {
+    bgMusic.pause();
+    console.log("Music paused");
+    updateMusicButton();
+  }
 }
 
 function showMusicButton() {
@@ -104,7 +113,7 @@ function showMusicButton() {
 function updateMusicButton() {
   const btn = document.getElementById("musicBtn");
   if (btn) {
-    const playing = isMusicPlaying();
+    const playing = bgMusic && !bgMusic.paused;
     btn.textContent = playing ? "🔊 Tắt nhạc" : "🔇 Bật nhạc";
     btn.classList.add("show");
   }
