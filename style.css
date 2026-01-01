@@ -269,6 +269,41 @@ body {
   pointer-events: none;
 }
 
+/* Music button */
+.music-btn {
+  position: fixed;
+  bottom: 60px;
+  right: 20px;
+  z-index: 800;
+  background: linear-gradient(135deg, rgba(255, 154, 158, 0.8), rgba(161, 140, 209, 0.8));
+  border: none;
+  border-radius: 30px;
+  padding: 12px 20px;
+  color: #fff;
+  font-size: 14px;
+  font-family: 'Quicksand', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.music-btn.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.music-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 25px rgba(255, 154, 158, 0.4);
+}
+
+.music-btn:active {
+  transform: scale(0.95);
+}
+
 /* Hearts */
 .hearts-container {
   position: fixed;
