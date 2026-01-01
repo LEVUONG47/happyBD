@@ -42,7 +42,7 @@ const CONFIG = {
   photoMultiplier: 5,
   
   // File nhạc nền (đặt file mp3 cùng thư mục)
-  musicFile: "drums-274805.mp3",
+  musicFile: "../drums-274805.mp3",
   
   // Màu thiên hà (RGB 0-255)
   galaxyColor1: { r: 255, g: 154, b: 158 },  // Hồng
@@ -54,28 +54,61 @@ const CONFIG = {
 // ============================================
 let bgMusic = null;
 let musicPlaying = false;
+let musicInitialized = false;
 
 function initMusic() {
   bgMusic = new Audio(CONFIG.musicFile);
   bgMusic.loop = true;
   bgMusic.volume = 0.5;
+  bgMusic.preload = "auto";
+  
+  // Preload audio
+  bgMusic.load();
+  
+  // Listen for canplaythrough to know when ready
+  bgMusic.addEventListener("canplaythrough", () => {
+    musicInitialized = true;
+    console.log("Music loaded and ready");
+  });
+  
+  // Handle errors
+  bgMusic.addEventListener("error", (e) => {
+    console.error("Music load error:", e);
+    showMusicButton();
+  });
 }
 
 function playMusic() {
-  if (bgMusic && !musicPlaying) {
-    bgMusic.play().then(() => {
+  if (!bgMusic) {
+    initMusic();
+  }
+  
+  if (musicPlaying) return;
+  
+  // Luôn hiện nút nhạc để người dùng có thể điều khiển
+  showMusicButton();
+  
+  const playPromise = bgMusic.play();
+  
+  if (playPromise !== undefined) {
+    playPromise.then(() => {
       musicPlaying = true;
       updateMusicButton();
+      console.log("Music playing");
     }).catch(e => {
       console.log("Music autoplay blocked:", e);
-      // Hiện nút bật nhạc nếu autoplay bị chặn
-      showMusicButton();
+      musicPlaying = false;
+      updateMusicButton();
     });
   }
 }
 
 function toggleMusic() {
-  if (!bgMusic) return;
+  if (!bgMusic) {
+    initMusic();
+    setTimeout(toggleMusic, 100);
+    return;
+  }
   
   if (musicPlaying) {
     bgMusic.pause();
@@ -83,14 +116,18 @@ function toggleMusic() {
   } else {
     bgMusic.play().then(() => {
       musicPlaying = true;
-    }).catch(e => console.log(e));
+    }).catch(e => {
+      console.log("Play failed:", e);
+    });
   }
   updateMusicButton();
 }
 
 function showMusicButton() {
   const btn = document.getElementById("musicBtn");
-  if (btn) btn.classList.add("show");
+  if (btn) {
+    btn.classList.add("show");
+  }
 }
 
 function updateMusicButton() {
@@ -586,4 +623,3 @@ console.log("Birthday Galaxy loaded!");
 console.log("Tip: Thay doi CONFIG o dau file script.js de tuy chinh");
 console.log("Keo chuot de xoay, cuon de zoom");
 console.log("Nhac se phat khi nhap dung mat khau");
-
