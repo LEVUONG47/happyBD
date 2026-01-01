@@ -39,7 +39,7 @@ const CONFIG = {
   avatarPhotoIndex: 3,
   
   // Số lần nhân bản mỗi ảnh trong thiên hà (nhiều hơn = nhiều ảnh hơn)
-  photoMultiplier: 8,
+  photoMultiplier: 34,
   
   // Màu thiên hà (RGB 0-255)
   galaxyColor1: { r: 255, g: 154, b: 158 },  // Hồng
