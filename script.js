@@ -20,21 +20,26 @@ const CONFIG = {
     "Nếu có lúc mệt, hãy nhớ: em không cần hoàn hảo—chỉ cần hạnh phúc. Anh luôn ủng hộ em. 🤍"
   ],
   
-  // Danh sách ảnh (ảnh index 2 sẽ làm avatar màn hình nhập pass)
+  // Danh sách ảnh - THÊM NHIỀU ẢNH VÀO ĐÂY
+  // Ảnh avatarPhotoIndex sẽ làm avatar màn hình nhập pass
   // Các ảnh còn lại sẽ quay trong thiên hà
   photos: [
-    "1.jpg",  // index 0 - trong thiên hà
-    "2.jpg",  // index 1 - trong thiên hà
-    "4.jpg",  // index 2 - AVATAR màn hình nhập pass
-    "3.jpg",  // index 3 - trong thiên hà (nếu có)
-    "5.jpg"   // index 4 - trong thiên hà (nếu có)
+    "1.jpg",
+    "2.jpg", 
+    "3.jpg",
+    "4.jpg",  // index 3 - AVATAR màn hình nhập pass
+    // Thêm nhiều ảnh nếu muốn:
+    // "5.jpg",
+    // "6.jpg",
+    // "7.jpg",
+    // "8.jpg",
   ],
   
-  // Index của ảnh làm avatar (mặc định là 2 = ảnh thứ 3)
-  avatarPhotoIndex: 2,
+  // Index của ảnh làm avatar (mặc định là 3 = ảnh thứ 4)
+  avatarPhotoIndex: 3,
   
   // File nhạc nền (đặt file mp3 cùng thư mục)
-  musicFile: "drums-274805.mp3",
+  musicFile: "music.mp3",
   
   // Màu thiên hà (RGB 0-255)
   galaxyColor1: { r: 255, g: 154, b: 158 },  // Hồng
@@ -293,7 +298,16 @@ function create3DPhotos() {
   const textureLoader = new THREE.TextureLoader();
   const galaxyPhotos = getGalaxyPhotos();
   
-  galaxyPhotos.forEach((photoUrl, index) => {
+  // Tạo nhiều bản sao của mỗi ảnh để có nhiều ảnh quay quanh hơn
+  const multipliedPhotos = [];
+  galaxyPhotos.forEach(photo => {
+    // Mỗi ảnh xuất hiện 3 lần ở các vị trí khác nhau
+    for (let i = 0; i < 3; i++) {
+      multipliedPhotos.push(photo);
+    }
+  });
+  
+  multipliedPhotos.forEach((photoUrl, index) => {
     textureLoader.load(photoUrl, (texture) => {
       const geometry = new THREE.PlaneGeometry(3, 3);
       const material = new THREE.MeshBasicMaterial({
@@ -304,19 +318,16 @@ function create3DPhotos() {
       
       const photo = new THREE.Mesh(geometry, material);
       
-      // Random orbit parameters
+      // Random orbit parameters - phân bố đều hơn
       const orbitData = {
         mesh: photo,
         photoUrl: photoUrl,
-        radius: 12 + Math.random() * 8,
-        speed: 0.2 + Math.random() * 0.3,
-        offset: (index / galaxyPhotos.length) * Math.PI * 2,
-        yOffset: (Math.random() - 0.5) * 6,
-        tilt: Math.random() * 0.5,
-        // For center animation
-        isMovingToCenter: false,
-        centerTime: 0,
-        originalRadius: 12 + Math.random() * 8
+        radius: 10 + Math.random() * 15,
+        speed: 0.15 + Math.random() * 0.25,
+        offset: (index / multipliedPhotos.length) * Math.PI * 2 + Math.random() * 0.5,
+        yOffset: (Math.random() - 0.5) * 8,
+        tilt: Math.random() * 1.5,
+        verticalSpeed: 0.1 + Math.random() * 0.2
       };
       
       orbitingPhotos.push(orbitData);
@@ -324,32 +335,33 @@ function create3DPhotos() {
     });
   });
   
-  // Schedule photos to fly to center one by one
-  schedulePhotoToCenter();
+  // Schedule random photo to fly to center
+  scheduleRandomPhotoToCenter();
 }
 
-let currentPhotoIndex = 0;
-let centerDisplayElement = null;
-
-function schedulePhotoToCenter() {
+function scheduleRandomPhotoToCenter() {
   setInterval(() => {
     if (orbitingPhotos.length === 0) return;
     
-    const photoData = orbitingPhotos[currentPhotoIndex % orbitingPhotos.length];
-    photoData.isMovingToCenter = true;
-    photoData.centerTime = 0;
+    // Chọn ngẫu nhiên một ảnh
+    const randomIndex = Math.floor(Math.random() * orbitingPhotos.length);
+    const photoData = orbitingPhotos[randomIndex];
     
-    currentPhotoIndex++;
-  }, 5000); // Every 5 seconds
+    // Chỉ chọn nếu ảnh đó không đang di chuyển
+    if (!photoData.isMovingToCenter) {
+      photoData.isMovingToCenter = true;
+      photoData.centerTime = 0;
+    }
+  }, 6000); // Mỗi 6 giây chọn ngẫu nhiên 1 ảnh
 }
 
 function updateOrbitingPhotos(time) {
-  orbitingPhotos.forEach((data, index) => {
+  orbitingPhotos.forEach((data) => {
     if (!data.mesh) return;
     
     if (data.isMovingToCenter) {
       // Animate to center
-      data.centerTime += 0.02;
+      data.centerTime += 0.015;
       
       if (data.centerTime < 1) {
         // Moving to center
@@ -359,32 +371,32 @@ function updateOrbitingPhotos(time) {
         const angle = time * data.speed + data.offset;
         const orbitX = Math.cos(angle) * data.radius;
         const orbitZ = Math.sin(angle) * data.radius;
-        const orbitY = data.yOffset + Math.sin(time * 0.5 + data.offset) * data.tilt;
+        const orbitY = data.yOffset + Math.sin(time * data.verticalSpeed + data.offset) * data.tilt;
         
-        // Lerp to center (camera position)
+        // Lerp to center
         data.mesh.position.x = orbitX * (1 - easeT);
         data.mesh.position.y = orbitY * (1 - easeT);
-        data.mesh.position.z = orbitZ * (1 - easeT) + 10 * easeT;
+        data.mesh.position.z = orbitZ * (1 - easeT) + 12 * easeT;
         
         // Scale up
-        const scale = 1 + easeT * 2;
+        const scale = 1 + easeT * 2.5;
         data.mesh.scale.set(scale, scale, scale);
         
         // Face camera
         data.mesh.lookAt(camera.position);
         
-      } else if (data.centerTime < 2.5) {
-        // Stay at center
-        data.mesh.position.set(0, 0, 10);
-        data.mesh.scale.set(3, 3, 3);
+      } else if (data.centerTime < 3) {
+        // Stay at center - 2 giây
+        data.mesh.position.set(0, 0, 12);
+        data.mesh.scale.set(3.5, 3.5, 3.5);
         data.mesh.lookAt(camera.position);
         
-        // Show in HTML overlay too
+        // Show in HTML overlay
         showCenterPhoto(data.photoUrl);
         
-      } else if (data.centerTime < 3.5) {
+      } else if (data.centerTime < 4) {
         // Move back to orbit
-        const t = (data.centerTime - 2.5);
+        const t = (data.centerTime - 3);
         const easeT = t * t * (3 - 2 * t);
         
         const angle = time * data.speed + data.offset;
@@ -394,9 +406,9 @@ function updateOrbitingPhotos(time) {
         
         data.mesh.position.x = orbitX * easeT;
         data.mesh.position.y = orbitY * easeT;
-        data.mesh.position.z = 10 * (1 - easeT) + orbitZ * easeT;
+        data.mesh.position.z = 12 * (1 - easeT) + orbitZ * easeT;
         
-        const scale = 3 - easeT * 2;
+        const scale = 3.5 - easeT * 2.5;
         data.mesh.scale.set(scale, scale, scale);
         data.mesh.lookAt(camera.position);
         
@@ -413,13 +425,15 @@ function updateOrbitingPhotos(time) {
       const angle = time * data.speed + data.offset;
       data.mesh.position.x = Math.cos(angle) * data.radius;
       data.mesh.position.z = Math.sin(angle) * data.radius;
-      data.mesh.position.y = data.yOffset + Math.sin(time * 0.5 + data.offset) * data.tilt;
+      data.mesh.position.y = data.yOffset + Math.sin(time * data.verticalSpeed + data.offset) * data.tilt;
       
       data.mesh.scale.set(1, 1, 1);
       data.mesh.lookAt(camera.position);
     }
   });
 }
+
+let centerDisplayElement = null;
 
 function showCenterPhoto(src) {
   if (!centerDisplayElement) {
@@ -443,7 +457,46 @@ function hideCenterPhoto() {
 // ============================================
 function startBirthdayShow() {
   createHearts();
-  typeWishes();
+  showWishesOneByOne();
+}
+
+// Hiển thị lời chúc từng câu một, rồi mất đi
+let currentWishIndex = 0;
+
+function showWishesOneByOne() {
+  const wishDisplay = document.getElementById("wishDisplay");
+  const titleEl = document.getElementById("birthdayTitle");
+  
+  // Update title with name
+  titleEl.textContent = `🎂 Happy Birthday ${CONFIG.birthdayName}! 🎂`;
+  
+  function showNextWish() {
+    const wish = CONFIG.wishes[currentWishIndex % CONFIG.wishes.length];
+    
+    // Reset classes
+    wishDisplay.classList.remove("show", "hide");
+    
+    // Set text
+    wishDisplay.textContent = wish;
+    
+    // Fade in
+    setTimeout(() => {
+      wishDisplay.classList.add("show");
+    }, 100);
+    
+    // Fade out after 5 seconds
+    setTimeout(() => {
+      wishDisplay.classList.remove("show");
+      wishDisplay.classList.add("hide");
+    }, 5000);
+    
+    // Next wish after 6 seconds
+    currentWishIndex++;
+    setTimeout(showNextWish, 6500);
+  }
+  
+  // Start after 1 second
+  setTimeout(showNextWish, 1000);
 }
 
 // Hearts animation
@@ -470,38 +523,6 @@ function createHearts() {
   
   // Continuous hearts
   setInterval(addHeart, 400);
-}
-
-// Typewriter effect
-function typeWishes() {
-  const typingEl = document.getElementById("typingText");
-  const titleEl = document.getElementById("birthdayTitle");
-  
-  // Update title with name
-  titleEl.textContent = `🎂 Happy Birthday ${CONFIG.birthdayName}! 🎂`;
-  
-  // Build full text
-  const fullText = CONFIG.wishes.join("\n\n");
-  let i = 0;
-  
-  function type() {
-    if (i < fullText.length) {
-      const char = fullText.charAt(i);
-      if (char === "\n") {
-        typingEl.innerHTML += "<br>";
-      } else {
-        typingEl.innerHTML += char;
-      }
-      i++;
-      setTimeout(type, 50);
-    } else {
-      // Add blinking cursor at end
-      typingEl.innerHTML += '<span class="cursor"></span>';
-    }
-  }
-  
-  // Start typing after 1 second
-  setTimeout(type, 1000);
 }
 
 // ============================================
