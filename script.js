@@ -467,22 +467,32 @@ function showWishesOneByOne() {
   const wishDisplay = document.getElementById("wishDisplay");
   const titleEl = document.getElementById("birthdayTitle");
   
+  if (!wishDisplay) {
+    console.error("wishDisplay element not found!");
+    return;
+  }
+  
   // Update title with name
   titleEl.textContent = `🎂 Happy Birthday ${CONFIG.birthdayName}! 🎂`;
   
   function showNextWish() {
     const wish = CONFIG.wishes[currentWishIndex % CONFIG.wishes.length];
     
-    // Reset classes
+    // Reset - remove all classes first
     wishDisplay.classList.remove("show", "hide");
+    
+    // Force reflow to reset animation
+    void wishDisplay.offsetWidth;
     
     // Set text
     wishDisplay.textContent = wish;
     
-    // Fade in
-    setTimeout(() => {
-      wishDisplay.classList.add("show");
-    }, 100);
+    // Fade in after small delay
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        wishDisplay.classList.add("show");
+      });
+    });
     
     // Fade out after 5 seconds
     setTimeout(() => {
@@ -490,7 +500,7 @@ function showWishesOneByOne() {
       wishDisplay.classList.add("hide");
     }, 5000);
     
-    // Next wish after 6 seconds
+    // Next wish after 6.5 seconds
     currentWishIndex++;
     setTimeout(showNextWish, 6500);
   }
