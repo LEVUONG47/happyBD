@@ -38,6 +38,9 @@ const CONFIG = {
   // Index của ảnh làm avatar (mặc định là 3 = ảnh thứ 4)
   avatarPhotoIndex: 3,
   
+  // Số lần nhân bản mỗi ảnh trong thiên hà (nhiều hơn = nhiều ảnh hơn)
+  photoMultiplier: 5,
+  
   // File nhạc nền (đặt file mp3 cùng thư mục)
   musicFile: "music.mp3",
   
@@ -50,6 +53,7 @@ const CONFIG = {
 // BACKGROUND MUSIC
 // ============================================
 let bgMusic = null;
+let musicPlaying = false;
 
 function initMusic() {
   bgMusic = new Audio(CONFIG.musicFile);
@@ -58,8 +62,42 @@ function initMusic() {
 }
 
 function playMusic() {
-  if (bgMusic) {
-    bgMusic.play().catch(e => console.log("Music autoplay blocked:", e));
+  if (bgMusic && !musicPlaying) {
+    bgMusic.play().then(() => {
+      musicPlaying = true;
+      updateMusicButton();
+    }).catch(e => {
+      console.log("Music autoplay blocked:", e);
+      // Hiện nút bật nhạc nếu autoplay bị chặn
+      showMusicButton();
+    });
+  }
+}
+
+function toggleMusic() {
+  if (!bgMusic) return;
+  
+  if (musicPlaying) {
+    bgMusic.pause();
+    musicPlaying = false;
+  } else {
+    bgMusic.play().then(() => {
+      musicPlaying = true;
+    }).catch(e => console.log(e));
+  }
+  updateMusicButton();
+}
+
+function showMusicButton() {
+  const btn = document.getElementById("musicBtn");
+  if (btn) btn.classList.add("show");
+}
+
+function updateMusicButton() {
+  const btn = document.getElementById("musicBtn");
+  if (btn) {
+    btn.textContent = musicPlaying ? "🔊 Tắt nhạc" : "🔇 Bật nhạc";
+    btn.classList.add("show");
   }
 }
 
@@ -301,8 +339,8 @@ function create3DPhotos() {
   // Tạo nhiều bản sao của mỗi ảnh để có nhiều ảnh quay quanh hơn
   const multipliedPhotos = [];
   galaxyPhotos.forEach(photo => {
-    // Mỗi ảnh xuất hiện 3 lần ở các vị trí khác nhau
-    for (let i = 0; i < 3; i++) {
+    // Mỗi ảnh xuất hiện nhiều lần ở các vị trí khác nhau
+    for (let i = 0; i < CONFIG.photoMultiplier; i++) {
       multipliedPhotos.push(photo);
     }
   });
@@ -538,8 +576,11 @@ function createHearts() {
 // ============================================
 // INITIALIZE
 // ============================================
-// Set avatar image from config (photo index 2 = 3rd photo)
+// Set avatar image from config
 document.getElementById("avatarImg").src = CONFIG.photos[CONFIG.avatarPhotoIndex];
+
+// Music button click handler
+document.getElementById("musicBtn")?.addEventListener("click", toggleMusic);
 
 console.log("Birthday Galaxy loaded!");
 console.log("Tip: Thay doi CONFIG o dau file script.js de tuy chinh");
