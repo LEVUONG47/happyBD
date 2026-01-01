@@ -6,33 +6,60 @@ import { OrbitControls } from "https://cdn.skypack.dev/three@0.136.0/examples/js
 // ============================================
 const CONFIG = {
   // Mật khẩu (ngày sinh: ddmmyyyy)
-  password: "15012000",
+  password: "04072004",
   
   // Tên người sinh nhật
-  birthdayName: "Em yêu",
+  birthdayName: "VƯƠNG_LÊ",
   
   // Lời chúc (mỗi dòng sẽ hiện từ từ)
   wishes: [
-    "Chúc em sinh nhật vui vẻ! 🎉",
-    "Mong em luôn khỏe mạnh, hạnh phúc...",
-    "Tuổi mới nhiều niềm vui, thành công!",
-    "Em là người tuyệt vời nhất! 💕",
-    "Yêu em nhiều lắm! 🥰"
+    "Chúc em tuổi mới bình yên trong lòng, vững vàng trong mọi lựa chọn và luôn được yêu thương đúng cách. 🌿",
+    "Mong em luôn đủ mạnh mẽ để bước tiếp, đủ dịu dàng để mỉm cười, và đủ may mắn để gặp toàn điều tử tế. ✨",
+    "Chúc em lớn lên theo cách em muốn: tự do, rực rỡ, nhưng vẫn giữ được trái tim ấm áp như bây giờ. 💛",
+    "Hy vọng mỗi ngày của em đều có điều đáng mong chờ, và mọi cố gắng của em đều được đáp lại xứng đáng. 🌸",
+    "Nếu có lúc mệt, hãy nhớ: em không cần hoàn hảo—chỉ cần hạnh phúc. Anh luôn ủng hộ em. 🤍"
   ],
   
-  // Danh sách ảnh (thay link ảnh của bạn vào đây)
+  // Danh sách ảnh (ảnh index 2 sẽ làm avatar màn hình nhập pass)
+  // Các ảnh còn lại sẽ quay trong thiên hà
   photos: [
-    "https://i.pinimg.com/564x/cb/bc/ef/cbbcef5a5db90cfb9e34f94e87f22dd6.jpg",
-    "https://i.pinimg.com/564x/a7/3c/5d/a73c5d8e9f0a1b2c3d4e5f6a7b8c9d0e.jpg",
-    "https://i.pinimg.com/564x/b8/4d/6e/b84d6e9f0a1b2c3d4e5f6a7b8c9d0e1f.jpg",
-    "https://i.pinimg.com/564x/c9/5e/7f/c95e7f0a1b2c3d4e5f6a7b8c9d0e1f2a.jpg",
-    "https://i.pinimg.com/564x/da/6f/80/da6f801b2c3d4e5f6a7b8c9d0e1f2a3b.jpg"
+    "1.jpg",  // index 0 - trong thiên hà
+    "2.jpg",  // index 1 - trong thiên hà
+    "4.jpg",  // index 2 - AVATAR màn hình nhập pass
+    "3.jpg",  // index 3 - trong thiên hà (nếu có)
+    "5.jpg"   // index 4 - trong thiên hà (nếu có)
   ],
+  
+  // Index của ảnh làm avatar (mặc định là 2 = ảnh thứ 3)
+  avatarPhotoIndex: 2,
+  
+  // File nhạc nền (đặt file mp3 cùng thư mục)
+  musicFile: "drums-274805.mp3",
   
   // Màu thiên hà (RGB 0-255)
   galaxyColor1: { r: 255, g: 154, b: 158 },  // Hồng
   galaxyColor2: { r: 161, g: 140, b: 209 }   // Tím
 };
+
+// ============================================
+// BACKGROUND MUSIC
+// ============================================
+let bgMusic = null;
+
+function initMusic() {
+  bgMusic = new Audio(CONFIG.musicFile);
+  bgMusic.loop = true;
+  bgMusic.volume = 0.5;
+}
+
+function playMusic() {
+  if (bgMusic) {
+    bgMusic.play().catch(e => console.log("Music autoplay blocked:", e));
+  }
+}
+
+// Initialize music on load
+initMusic();
 
 // ============================================
 // PASSWORD LOGIC
@@ -72,6 +99,10 @@ document.getElementById("keyCheck").addEventListener("click", checkPassword);
 function checkPassword() {
   if (enteredPass === CONFIG.password) {
     passwordScreen.classList.add("hidden");
+    
+    // Play music when password correct
+    playMusic();
+    
     setTimeout(() => {
       galaxyScreen.classList.add("active");
       initGalaxy();
@@ -106,6 +137,12 @@ document.addEventListener("keydown", (e) => {
 // ============================================
 let scene, camera, renderer, controls, points;
 let gu = { time: { value: 0 } };
+let orbitingPhotos = [];
+
+// Get photos for galaxy (exclude avatar photo)
+function getGalaxyPhotos() {
+  return CONFIG.photos.filter((_, index) => index !== CONFIG.avatarPhotoIndex);
+}
 
 function initGalaxy() {
   scene = new THREE.Scene();
@@ -120,9 +157,11 @@ function initGalaxy() {
   
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
-  controls.enablePan = false;
+  controls.enablePan = true;
   controls.autoRotate = true;
-  controls.autoRotateSpeed = 0.5;
+  controls.autoRotateSpeed = 0.3;
+  controls.minDistance = 5;
+  controls.maxDistance = 100;
 
   // Create galaxy particles
   let sizes = [];
@@ -220,6 +259,9 @@ function initGalaxy() {
   points.rotation.z = 0.2;
   scene.add(points);
 
+  // ===== ADD 3D ORBITING PHOTOS =====
+  create3DPhotos();
+
   // Resize handler
   window.addEventListener("resize", () => {
     camera.aspect = innerWidth / innerHeight;
@@ -235,9 +277,164 @@ function initGalaxy() {
     let t = clock.getElapsedTime() * 0.5;
     gu.time.value = t * Math.PI;
     points.rotation.y = t * 0.05;
+    
+    // Update orbiting photos
+    updateOrbitingPhotos(t);
+    
     renderer.render(scene, camera);
   }
   animate();
+}
+
+// ============================================
+// 3D ORBITING PHOTOS
+// ============================================
+function create3DPhotos() {
+  const textureLoader = new THREE.TextureLoader();
+  const galaxyPhotos = getGalaxyPhotos();
+  
+  galaxyPhotos.forEach((photoUrl, index) => {
+    textureLoader.load(photoUrl, (texture) => {
+      const geometry = new THREE.PlaneGeometry(3, 3);
+      const material = new THREE.MeshBasicMaterial({
+        map: texture,
+        side: THREE.DoubleSide,
+        transparent: true
+      });
+      
+      const photo = new THREE.Mesh(geometry, material);
+      
+      // Random orbit parameters
+      const orbitData = {
+        mesh: photo,
+        photoUrl: photoUrl,
+        radius: 12 + Math.random() * 8,
+        speed: 0.2 + Math.random() * 0.3,
+        offset: (index / galaxyPhotos.length) * Math.PI * 2,
+        yOffset: (Math.random() - 0.5) * 6,
+        tilt: Math.random() * 0.5,
+        // For center animation
+        isMovingToCenter: false,
+        centerTime: 0,
+        originalRadius: 12 + Math.random() * 8
+      };
+      
+      orbitingPhotos.push(orbitData);
+      scene.add(photo);
+    });
+  });
+  
+  // Schedule photos to fly to center one by one
+  schedulePhotoToCenter();
+}
+
+let currentPhotoIndex = 0;
+let centerDisplayElement = null;
+
+function schedulePhotoToCenter() {
+  setInterval(() => {
+    if (orbitingPhotos.length === 0) return;
+    
+    const photoData = orbitingPhotos[currentPhotoIndex % orbitingPhotos.length];
+    photoData.isMovingToCenter = true;
+    photoData.centerTime = 0;
+    
+    currentPhotoIndex++;
+  }, 5000); // Every 5 seconds
+}
+
+function updateOrbitingPhotos(time) {
+  orbitingPhotos.forEach((data, index) => {
+    if (!data.mesh) return;
+    
+    if (data.isMovingToCenter) {
+      // Animate to center
+      data.centerTime += 0.02;
+      
+      if (data.centerTime < 1) {
+        // Moving to center
+        const t = data.centerTime;
+        const easeT = t * t * (3 - 2 * t); // Smooth step
+        
+        const angle = time * data.speed + data.offset;
+        const orbitX = Math.cos(angle) * data.radius;
+        const orbitZ = Math.sin(angle) * data.radius;
+        const orbitY = data.yOffset + Math.sin(time * 0.5 + data.offset) * data.tilt;
+        
+        // Lerp to center (camera position)
+        data.mesh.position.x = orbitX * (1 - easeT);
+        data.mesh.position.y = orbitY * (1 - easeT);
+        data.mesh.position.z = orbitZ * (1 - easeT) + 10 * easeT;
+        
+        // Scale up
+        const scale = 1 + easeT * 2;
+        data.mesh.scale.set(scale, scale, scale);
+        
+        // Face camera
+        data.mesh.lookAt(camera.position);
+        
+      } else if (data.centerTime < 2.5) {
+        // Stay at center
+        data.mesh.position.set(0, 0, 10);
+        data.mesh.scale.set(3, 3, 3);
+        data.mesh.lookAt(camera.position);
+        
+        // Show in HTML overlay too
+        showCenterPhoto(data.photoUrl);
+        
+      } else if (data.centerTime < 3.5) {
+        // Move back to orbit
+        const t = (data.centerTime - 2.5);
+        const easeT = t * t * (3 - 2 * t);
+        
+        const angle = time * data.speed + data.offset;
+        const orbitX = Math.cos(angle) * data.radius;
+        const orbitZ = Math.sin(angle) * data.radius;
+        const orbitY = data.yOffset;
+        
+        data.mesh.position.x = orbitX * easeT;
+        data.mesh.position.y = orbitY * easeT;
+        data.mesh.position.z = 10 * (1 - easeT) + orbitZ * easeT;
+        
+        const scale = 3 - easeT * 2;
+        data.mesh.scale.set(scale, scale, scale);
+        data.mesh.lookAt(camera.position);
+        
+        hideCenterPhoto();
+        
+      } else {
+        // Reset
+        data.isMovingToCenter = false;
+        data.centerTime = 0;
+      }
+      
+    } else {
+      // Normal orbit
+      const angle = time * data.speed + data.offset;
+      data.mesh.position.x = Math.cos(angle) * data.radius;
+      data.mesh.position.z = Math.sin(angle) * data.radius;
+      data.mesh.position.y = data.yOffset + Math.sin(time * 0.5 + data.offset) * data.tilt;
+      
+      data.mesh.scale.set(1, 1, 1);
+      data.mesh.lookAt(camera.position);
+    }
+  });
+}
+
+function showCenterPhoto(src) {
+  if (!centerDisplayElement) {
+    centerDisplayElement = document.getElementById("centerPhotoDisplay");
+  }
+  if (centerDisplayElement) {
+    centerDisplayElement.querySelector("img").src = src;
+    centerDisplayElement.classList.add("show");
+  }
+}
+
+function hideCenterPhoto() {
+  if (centerDisplayElement) {
+    centerDisplayElement.classList.remove("show");
+  }
 }
 
 
@@ -245,32 +442,8 @@ function initGalaxy() {
 // BIRTHDAY EFFECTS
 // ============================================
 function startBirthdayShow() {
-  createFloatingPhotos();
   createHearts();
   typeWishes();
-}
-
-// Floating photos
-function createFloatingPhotos() {
-  const container = document.getElementById("floatingPhotos");
-  
-  // Create multiple copies of photos
-  for (let i = 0; i < 15; i++) {
-    const photo = document.createElement("div");
-    photo.className = "float-photo";
-    const src = CONFIG.photos[i % CONFIG.photos.length];
-    photo.innerHTML = `<img src="${src}" alt="Photo">`;
-    
-    const size = 40 + Math.random() * 50;
-    photo.style.width = size + "px";
-    photo.style.height = size + "px";
-    photo.style.left = Math.random() * 90 + 5 + "%";
-    photo.style.bottom = "-100px";
-    photo.style.animationDuration = 15 + Math.random() * 10 + "s";
-    photo.style.animationDelay = Math.random() * -20 + "s";
-    
-    container.appendChild(photo);
-  }
 }
 
 // Hearts animation
@@ -334,9 +507,10 @@ function typeWishes() {
 // ============================================
 // INITIALIZE
 // ============================================
-// Set avatar images from config
-document.getElementById("avatarImg").src = CONFIG.photos[0];
-document.getElementById("centerImg").src = CONFIG.photos[0];
+// Set avatar image from config (photo index 2 = 3rd photo)
+document.getElementById("avatarImg").src = CONFIG.photos[CONFIG.avatarPhotoIndex];
 
-console.log("🎂 Birthday Galaxy loaded!");
-console.log("💡 Tip: Thay đổi CONFIG ở đầu file script.js để tùy chỉnh");
+console.log("Birthday Galaxy loaded!");
+console.log("Tip: Thay doi CONFIG o dau file script.js de tuy chinh");
+console.log("Keo chuot de xoay, cuon de zoom");
+console.log("Nhac se phat khi nhap dung mat khau");
