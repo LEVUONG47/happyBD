@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎂 Happy Birthday Galaxy</title>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Password Screen -->
+<div class="password-screen" id="passwordScreen">
+  <h1 class="pass-title">NHẬP PASS ĐI NGƯỜI ĐẸP 💕</h1>
+  <div class="pass-container">
+    <div class="avatar-box">
+      <img src="https://i.pinimg.com/564x/cb/bc/ef/cbbcef5a5db90cfb9e34f94e87f22dd6.jpg" alt="Avatar" id="avatarImg">
+    </div>
+    <div class="keypad-section">
+      <div class="pass-display" id="passDisplay">••••••••</div>
+      <div class="keypad">
+        <button class="key key-num" data-num="1">1</button>
+        <button class="key key-num" data-num="2">2</button>
+        <button class="key key-num" data-num="3">3</button>
+        <button class="key key-num" data-num="4">4</button>
+        <button class="key key-num" data-num="5">5</button>
+        <button class="key key-num" data-num="6">6</button>
+        <button class="key key-num" data-num="7">7</button>
+        <button class="key key-num" data-num="8">8</button>
+        <button class="key key-num" data-num="9">9</button>
+        <button class="key key-action" id="keyCheck">✓</button>
+        <button class="key key-num" data-num="0">0</button>
+        <button class="key key-action" id="keyDelete">✕</button>
+      </div>
+      <div class="error-msg" id="errorMsg">Sai mật khẩu rồi! 😢</div>
+    </div>
+  </div>
+  <p class="pass-hint">Gợi ý: Ngày sinh của người ấy (ddmmyyyy)</p>
+</div>
+
+<!-- Galaxy Screen -->
+<div class="galaxy-screen" id="galaxyScreen">
+  <div class="birthday-text">
+    <h2 id="birthdayTitle">🎂 Happy Birthday! 🎂</h2>
+    <div class="typing" id="typingText"></div>
+  </div>
+  
+  <div class="photo-orbit">
+    <div class="center-photo">
+      <img src="https://i.pinimg.com/564x/cb/bc/ef/cbbcef5a5db90cfb9e34f94e87f22dd6.jpg" alt="Center" id="centerImg">
+    </div>
+  </div>
+  
+  <div class="floating-photos" id="floatingPhotos"></div>
+  <div class="hearts-container" id="heartsContainer"></div>
+</div>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>
